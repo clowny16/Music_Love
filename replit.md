@@ -15,6 +15,26 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Python**: 3.11 (via `.pythonlibs`) — used for `ytmusicapi`
+
+## Artifacts
+
+### Music Player (`artifacts/music-player`)
+- **Kind**: react-vite (web)
+- **Preview path**: `/`
+- **Purpose**: A dark-themed YouTube Music player
+- **Features**: Search songs, search suggestions, top charts, queue management, YouTube IFrame playback
+
+### API Server (`artifacts/api-server`)
+- **Kind**: api
+- **Preview path**: `/api`
+- **Purpose**: Express backend serving music data via ytmusicapi (Python)
+- **Routes**:
+  - `GET /api/music/search?q=&filter=` — search songs
+  - `GET /api/music/song/:videoId` — song details
+  - `GET /api/music/charts?country=` — trending/top songs
+  - `GET /api/music/suggestions?q=` — search suggestions
+  - `GET /api/music/watch/:videoId` — watch queue
 
 ## Key Commands
 

@@ -1,0 +1,65 @@
+Design a modern, minimal, dark-themed frontend UI inspired by professional developer tools and API documentation dashboards. The interface should emphasize clarity, readability, and structured content presentation.
+
+Core Visual Style
+Use a pure black background (#000000) for the entire interface.
+Apply white (#FFFFFF) as the primary text color for maximum contrast.
+Use light grey (#AAAAAA) for secondary text and metadata.
+Accents should be subtle (soft white/grey highlights only) — avoid bright or saturated colors.
+Typography System
+Use Lexend for headings to create a bold, modern hierarchy.
+Use Lato for body text to ensure readability and clean presentation.
+Maintain clear typographic scale:
+Headings: bold, spaced, prominent
+Subtext: smaller, muted, well-spaced
+Layout & Structure
+Build the interface using a card-based modular layout.
+Each major feature should be separated into distinct cards:
+Browsing (search, artist details, albums, songs)
+Library Management
+Playlists
+Podcasts
+Uploads
+Authentication & Setup
+Card Design
+
+Each card should include:
+
+Soft rounded corners (8–12px)
+Subtle borders or shadows (low-opacity white/grey)
+Consistent padding and spacing
+Clear section titles (Lexend)
+Well-structured content (Lato)
+Navigation
+Include a sticky sidebar (preferred) or top navigation bar.
+Navigation should be:
+Minimal
+Clearly labeled
+Icon-supported for quick scanning
+Highlight the active section with a subtle visual indicator.
+Interactions & UX
+Add smooth hover effects:
+Slight elevation (translateY or shadow)
+Soft glow or border highlight
+Ensure transitions are fast and subtle (150–250ms).
+Maintain a low-noise UI (no unnecessary animations).
+Responsiveness
+Design desktop-first, but ensure:
+Smooth scaling to tablet
+Clean stacking layout for mobile
+Sidebar should collapse into a hamburger menu on smaller screens.
+Design Principles
+Prioritize:
+Readability over decoration
+Consistency in spacing and alignment
+Developer-friendly structure
+Follow a documentation-style layout similar to modern tools like Notion, Stripe Docs, or Vercel dashboards.
+Overall Feel
+
+The UI should feel:
+
+Clean
+Professional
+Structured
+Calm and distraction-free
+
+Avoid visual clutter. Every element should serve a clear purpose.

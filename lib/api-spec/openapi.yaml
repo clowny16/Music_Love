@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Music Player API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: music
+    description: Music operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,108 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /music/search:
+    get:
+      operationId: searchMusic
+      tags: [music]
+      summary: Search for music
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [songs, videos, albums, artists, playlists]
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
+  /music/song/{videoId}:
+    get:
+      operationId: getSong
+      tags: [music]
+      summary: Get song info and stream URL
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Song info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SongInfo"
+
+  /music/charts:
+    get:
+      operationId: getCharts
+      tags: [music]
+      summary: Get top charts
+      parameters:
+        - name: country
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Chart results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChartResults"
+
+  /music/suggestions:
+    get:
+      operationId: getSearchSuggestions
+      tags: [music]
+      summary: Get search suggestions
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchSuggestions"
+
+  /music/watch/{videoId}:
+    get:
+      operationId: getWatchPlaylist
+      tags: [music]
+      summary: Get watch playlist (up next queue)
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Watch playlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchPlaylist"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +138,149 @@ components:
       required:
         - status
 
+    Track:
+      type: object
+      properties:
+        videoId:
+          type: string
+        title:
+          type: string
+        artists:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              id:
+                type: string
+        album:
+          type: object
+          nullable: true
+          properties:
+            name:
+              type: string
+            id:
+              type: string
+        duration:
+          type: string
+          nullable: true
+        durationSeconds:
+          type: integer
+          nullable: true
+        thumbnails:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              width:
+                type: integer
+              height:
+                type: integer
+        isExplicit:
+          type: boolean
+          nullable: true
+      required:
+        - videoId
+        - title
+        - artists
+        - thumbnails
+
+    SearchResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Track"
+        query:
+          type: string
+      required:
+        - results
+        - query
+
+    SongInfo:
+      type: object
+      properties:
+        videoId:
+          type: string
+        title:
+          type: string
+        artists:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+        album:
+          type: string
+          nullable: true
+        thumbnails:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              width:
+                type: integer
+              height:
+                type: integer
+        duration:
+          type: string
+          nullable: true
+        durationSeconds:
+          type: integer
+          nullable: true
+        youtubeUrl:
+          type: string
+      required:
+        - videoId
+        - title
+        - artists
+        - thumbnails
+        - youtubeUrl
+
+    ChartResults:
+      type: object
+      properties:
+        trending:
+          type: array
+          items:
+            $ref: "#/components/schemas/Track"
+        topSongs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Track"
+        country:
+          type: string
+      required:
+        - trending
+        - topSongs
+        - country
+
+    SearchSuggestions:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - suggestions
+
+    WatchPlaylist:
+      type: object
+      properties:
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Track"
+        playlistId:
+          type: string
+          nullable: true
+      required:
+        - tracks
