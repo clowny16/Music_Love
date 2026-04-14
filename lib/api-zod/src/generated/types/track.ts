@@ -5,9 +5,9 @@
  * Music Player API
  * OpenAPI spec version: 0.1.0
  */
+import type { Thumbnail } from "./thumbnail";
 import type { TrackAlbum } from "./trackAlbum";
 import type { TrackArtistsItem } from "./trackArtistsItem";
-import type { TrackThumbnailsItem } from "./trackThumbnailsItem";
 
 export interface Track {
   videoId: string;
@@ -16,6 +16,6 @@ export interface Track {
   album?: TrackAlbum;
   duration?: string | null;
   durationSeconds?: number | null;
-  thumbnails: TrackThumbnailsItem[];
+  thumbnails: Thumbnail[];
   isExplicit?: boolean | null;
 }

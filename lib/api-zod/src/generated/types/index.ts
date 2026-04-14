@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./albumDetail";
 export * from "./chartResults";
 export * from "./getChartsParams";
 export * from "./getSearchSuggestionsParams";
@@ -16,9 +17,9 @@ export * from "./searchResults";
 export * from "./searchSuggestions";
 export * from "./songInfo";
 export * from "./songInfoArtistsItem";
-export * from "./songInfoThumbnailsItem";
+export * from "./thumbnail";
+export * from "./topArtist";
 export * from "./track";
 export * from "./trackAlbum";
 export * from "./trackArtistsItem";
-export * from "./trackThumbnailsItem";
 export * from "./watchPlaylist";

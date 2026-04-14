@@ -18,7 +18,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -56,7 +55,7 @@ paths:
     get:
       operationId: getSong
       tags: [music]
-      summary: Get song info and stream URL
+      summary: Get song info
       parameters:
         - name: videoId
           in: path
@@ -113,7 +112,7 @@ paths:
     get:
       operationId: getWatchPlaylist
       tags: [music]
-      summary: Get watch playlist (up next queue)
+      summary: Get watch playlist
       parameters:
         - name: videoId
           in: path
@@ -128,6 +127,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/WatchPlaylist"
 
+  /music/album/{albumId}:
+    get:
+      operationId: getAlbum
+      tags: [music]
+      summary: Get album details and tracks
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Album details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumDetail"
+
 components:
   schemas:
     HealthStatus:
@@ -137,6 +155,16 @@ components:
           type: string
       required:
         - status
+
+    Thumbnail:
+      type: object
+      properties:
+        url:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
 
     Track:
       type: object
@@ -171,14 +199,7 @@ components:
         thumbnails:
           type: array
           items:
-            type: object
-            properties:
-              url:
-                type: string
-              width:
-                type: integer
-              height:
-                type: integer
+            $ref: "#/components/schemas/Thumbnail"
         isExplicit:
           type: boolean
           nullable: true
@@ -221,14 +242,7 @@ components:
         thumbnails:
           type: array
           items:
-            type: object
-            properties:
-              url:
-                type: string
-              width:
-                type: integer
-              height:
-                type: integer
+            $ref: "#/components/schemas/Thumbnail"
         duration:
           type: string
           nullable: true
@@ -244,22 +258,50 @@ components:
         - thumbnails
         - youtubeUrl
 
+    TopArtist:
+      type: object
+      properties:
+        title:
+          type: string
+        browseId:
+          type: string
+        subscribers:
+          type: string
+          nullable: true
+        thumbnails:
+          type: array
+          items:
+            $ref: "#/components/schemas/Thumbnail"
+        rank:
+          type: string
+          nullable: true
+        trend:
+          type: string
+          nullable: true
+      required:
+        - title
+        - browseId
+        - thumbnails
+
     ChartResults:
       type: object
       properties:
-        trending:
+        chartTracks:
           type: array
           items:
             $ref: "#/components/schemas/Track"
-        topSongs:
+        topArtists:
           type: array
           items:
-            $ref: "#/components/schemas/Track"
+            $ref: "#/components/schemas/TopArtist"
+        featuredTitle:
+          type: string
         country:
           type: string
       required:
-        - trending
-        - topSongs
+        - chartTracks
+        - topArtists
+        - featuredTitle
         - country
 
     SearchSuggestions:
@@ -284,3 +326,36 @@ components:
           nullable: true
       required:
         - tracks
+
+    AlbumDetail:
+      type: object
+      properties:
+        albumId:
+          type: string
+        title:
+          type: string
+        artist:
+          type: string
+        year:
+          type: string
+          nullable: true
+        thumbnails:
+          type: array
+          items:
+            $ref: "#/components/schemas/Thumbnail"
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Track"
+        trackCount:
+          type: integer
+        description:
+          type: string
+          nullable: true
+      required:
+        - albumId
+        - title
+        - artist
+        - thumbnails
+        - tracks
+        - trackCount

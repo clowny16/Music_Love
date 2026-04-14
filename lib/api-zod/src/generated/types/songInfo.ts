@@ -6,14 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { SongInfoArtistsItem } from "./songInfoArtistsItem";
-import type { SongInfoThumbnailsItem } from "./songInfoThumbnailsItem";
+import type { Thumbnail } from "./thumbnail";
 
 export interface SongInfo {
   videoId: string;
   title: string;
   artists: SongInfoArtistsItem[];
   album?: string | null;
-  thumbnails: SongInfoThumbnailsItem[];
+  thumbnails: Thumbnail[];
   duration?: string | null;
   durationSeconds?: number | null;
   youtubeUrl: string;

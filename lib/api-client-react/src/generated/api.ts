@@ -14,6 +14,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AlbumDetail,
   ChartResults,
   GetChartsParams,
   GetSearchSuggestionsParams,
@@ -35,7 +36,6 @@ type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const getHealthCheckUrl = () => {
@@ -205,7 +205,7 @@ export function useSearchMusic<
 }
 
 /**
- * @summary Get song info and stream URL
+ * @summary Get song info
  */
 export const getGetSongUrl = (videoId: string) => {
   return `/api/music/song/${videoId}`;
@@ -259,7 +259,7 @@ export type GetSongQueryResult = NonNullable<
 export type GetSongQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get song info and stream URL
+ * @summary Get song info
  */
 
 export function useGetSong<
@@ -476,7 +476,7 @@ export function useGetSearchSuggestions<
 }
 
 /**
- * @summary Get watch playlist (up next queue)
+ * @summary Get watch playlist
  */
 export const getGetWatchPlaylistUrl = (videoId: string) => {
   return `/api/music/watch/${videoId}`;
@@ -537,7 +537,7 @@ export type GetWatchPlaylistQueryResult = NonNullable<
 export type GetWatchPlaylistQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get watch playlist (up next queue)
+ * @summary Get watch playlist
  */
 
 export function useGetWatchPlaylist<
@@ -555,6 +555,91 @@ export function useGetWatchPlaylist<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetWatchPlaylistQueryOptions(videoId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get album details and tracks
+ */
+export const getGetAlbumUrl = (albumId: string) => {
+  return `/api/music/album/${albumId}`;
+};
+
+export const getAlbum = async (
+  albumId: string,
+  options?: RequestInit,
+): Promise<AlbumDetail> => {
+  return customFetch<AlbumDetail>(getGetAlbumUrl(albumId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAlbumQueryKey = (albumId: string) => {
+  return [`/api/music/album/${albumId}`] as const;
+};
+
+export const getGetAlbumQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAlbum>>,
+  TError = ErrorType<unknown>,
+>(
+  albumId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAlbum>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAlbumQueryKey(albumId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAlbum>>> = ({
+    signal,
+  }) => getAlbum(albumId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!albumId,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getAlbum>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetAlbumQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAlbum>>
+>;
+export type GetAlbumQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get album details and tracks
+ */
+
+export function useGetAlbum<
+  TData = Awaited<ReturnType<typeof getAlbum>>,
+  TError = ErrorType<unknown>,
+>(
+  albumId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAlbum>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAlbumQueryOptions(albumId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

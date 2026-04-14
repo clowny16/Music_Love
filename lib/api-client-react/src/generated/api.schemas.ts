@@ -9,6 +9,12 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface Thumbnail {
+  url?: string;
+  width?: number;
+  height?: number;
+}
+
 export type TrackArtistsItem = {
   name?: string;
   id?: string;
@@ -19,12 +25,6 @@ export type TrackAlbum = {
   id?: string;
 } | null;
 
-export type TrackThumbnailsItem = {
-  url?: string;
-  width?: number;
-  height?: number;
-};
-
 export interface Track {
   videoId: string;
   title: string;
@@ -32,7 +32,7 @@ export interface Track {
   album?: TrackAlbum;
   duration?: string | null;
   durationSeconds?: number | null;
-  thumbnails: TrackThumbnailsItem[];
+  thumbnails: Thumbnail[];
   isExplicit?: boolean | null;
 }
 
@@ -45,26 +45,30 @@ export type SongInfoArtistsItem = {
   name?: string;
 };
 
-export type SongInfoThumbnailsItem = {
-  url?: string;
-  width?: number;
-  height?: number;
-};
-
 export interface SongInfo {
   videoId: string;
   title: string;
   artists: SongInfoArtistsItem[];
   album?: string | null;
-  thumbnails: SongInfoThumbnailsItem[];
+  thumbnails: Thumbnail[];
   duration?: string | null;
   durationSeconds?: number | null;
   youtubeUrl: string;
 }
 
+export interface TopArtist {
+  title: string;
+  browseId: string;
+  subscribers?: string | null;
+  thumbnails: Thumbnail[];
+  rank?: string | null;
+  trend?: string | null;
+}
+
 export interface ChartResults {
-  trending: Track[];
-  topSongs: Track[];
+  chartTracks: Track[];
+  topArtists: TopArtist[];
+  featuredTitle: string;
   country: string;
 }
 
@@ -75,6 +79,17 @@ export interface SearchSuggestions {
 export interface WatchPlaylist {
   tracks: Track[];
   playlistId?: string | null;
+}
+
+export interface AlbumDetail {
+  albumId: string;
+  title: string;
+  artist: string;
+  year?: string | null;
+  thumbnails: Thumbnail[];
+  tracks: Track[];
+  trackCount: number;
+  description?: string | null;
 }
 
 export type SearchMusicParams = {

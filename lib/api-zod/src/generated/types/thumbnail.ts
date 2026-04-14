@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type TrackThumbnailsItem = {
+export interface Thumbnail {
   url?: string;
   width?: number;
   height?: number;
-};
+}

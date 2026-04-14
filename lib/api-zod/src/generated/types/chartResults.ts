@@ -5,10 +5,12 @@
  * Music Player API
  * OpenAPI spec version: 0.1.0
  */
+import type { TopArtist } from "./topArtist";
 import type { Track } from "./track";
 
 export interface ChartResults {
-  trending: Track[];
-  topSongs: Track[];
+  chartTracks: Track[];
+  topArtists: TopArtist[];
+  featuredTitle: string;
   country: string;
 }

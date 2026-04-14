@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -58,7 +57,7 @@ export const SearchMusicResponse = zod.object({
 });
 
 /**
- * @summary Get song info and stream URL
+ * @summary Get song info
  */
 export const GetSongParams = zod.object({
   videoId: zod.coerce.string(),
@@ -93,7 +92,7 @@ export const GetChartsQueryParams = zod.object({
 });
 
 export const GetChartsResponse = zod.object({
-  trending: zod.array(
+  chartTracks: zod.array(
     zod.object({
       videoId: zod.string(),
       title: zod.string(),
@@ -121,24 +120,11 @@ export const GetChartsResponse = zod.object({
       isExplicit: zod.boolean().nullish(),
     }),
   ),
-  topSongs: zod.array(
+  topArtists: zod.array(
     zod.object({
-      videoId: zod.string(),
       title: zod.string(),
-      artists: zod.array(
-        zod.object({
-          name: zod.string().optional(),
-          id: zod.string().optional(),
-        }),
-      ),
-      album: zod
-        .object({
-          name: zod.string().optional(),
-          id: zod.string().optional(),
-        })
-        .nullish(),
-      duration: zod.string().nullish(),
-      durationSeconds: zod.number().nullish(),
+      browseId: zod.string(),
+      subscribers: zod.string().nullish(),
       thumbnails: zod.array(
         zod.object({
           url: zod.string().optional(),
@@ -146,9 +132,11 @@ export const GetChartsResponse = zod.object({
           height: zod.number().optional(),
         }),
       ),
-      isExplicit: zod.boolean().nullish(),
+      rank: zod.string().nullish(),
+      trend: zod.string().nullish(),
     }),
   ),
+  featuredTitle: zod.string(),
   country: zod.string(),
 });
 
@@ -164,7 +152,7 @@ export const GetSearchSuggestionsResponse = zod.object({
 });
 
 /**
- * @summary Get watch playlist (up next queue)
+ * @summary Get watch playlist
  */
 export const GetWatchPlaylistParams = zod.object({
   videoId: zod.coerce.string(),
@@ -200,4 +188,55 @@ export const GetWatchPlaylistResponse = zod.object({
     }),
   ),
   playlistId: zod.string().nullish(),
+});
+
+/**
+ * @summary Get album details and tracks
+ */
+export const GetAlbumParams = zod.object({
+  albumId: zod.coerce.string(),
+});
+
+export const GetAlbumResponse = zod.object({
+  albumId: zod.string(),
+  title: zod.string(),
+  artist: zod.string(),
+  year: zod.string().nullish(),
+  thumbnails: zod.array(
+    zod.object({
+      url: zod.string().optional(),
+      width: zod.number().optional(),
+      height: zod.number().optional(),
+    }),
+  ),
+  tracks: zod.array(
+    zod.object({
+      videoId: zod.string(),
+      title: zod.string(),
+      artists: zod.array(
+        zod.object({
+          name: zod.string().optional(),
+          id: zod.string().optional(),
+        }),
+      ),
+      album: zod
+        .object({
+          name: zod.string().optional(),
+          id: zod.string().optional(),
+        })
+        .nullish(),
+      duration: zod.string().nullish(),
+      durationSeconds: zod.number().nullish(),
+      thumbnails: zod.array(
+        zod.object({
+          url: zod.string().optional(),
+          width: zod.number().optional(),
+          height: zod.number().optional(),
+        }),
+      ),
+      isExplicit: zod.boolean().nullish(),
+    }),
+  ),
+  trackCount: zod.number(),
+  description: zod.string().nullish(),
 });

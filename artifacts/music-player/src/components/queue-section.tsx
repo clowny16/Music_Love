@@ -1,75 +1,123 @@
+import type { ReactNode } from "react";
 import { usePlayer } from "@/contexts/player-context";
 import { TrackCard } from "./track-card";
-import { ListMusic } from "lucide-react";
+import { ListMusic, History } from "lucide-react";
+import { useState } from "react";
 
 export function QueueSection() {
-  const { queue, currentTrack, playTrack } = usePlayer();
+  const { queue, recentlyPlayed, currentTrack, playTrack } = usePlayer();
+  const [tab, setTab] = useState<"queue" | "recent">("queue");
 
-  if (queue.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 text-center">
-        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner">
-          <ListMusic className="w-10 h-10 text-white/20" />
-        </div>
-        <h3 className="text-xl font-medium text-white mb-2">Queue is empty</h3>
-        <p className="text-white/40 text-sm max-w-xs">
-          Play a song or search for music to build your queue.
-        </p>
-      </div>
-    );
-  }
-
-  // Find where we are in the queue
-  const currentIndex = currentTrack 
-    ? queue.findIndex(t => t.videoId === currentTrack.videoId)
+  const currentIndex = currentTrack
+    ? queue.findIndex((t) => t.videoId === currentTrack.videoId)
     : -1;
 
-  const upcomingTracks = currentIndex >= 0 
-    ? queue.slice(currentIndex + 1)
-    : queue;
+  const upcomingTracks = currentIndex >= 0 ? queue.slice(currentIndex + 1) : queue;
+  const previousTracks = currentIndex > 0 ? queue.slice(0, currentIndex) : [];
 
-  const previousTracks = currentIndex > 0
-    ? queue.slice(0, currentIndex)
-    : [];
+  const displayRecent = recentlyPlayed.slice(0, 30);
 
   return (
-    <div className="space-y-10 pb-10 max-w-3xl mx-auto">
-      {currentTrack && (
-        <section>
-          <h2 className="text-lg font-semibold text-white/80 mb-4 px-2 uppercase tracking-wider text-xs">Now Playing</h2>
-          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-2 shadow-lg shadow-black/50">
-            <div onClick={() => playTrack(currentTrack)}>
-              <TrackCard track={currentTrack} />
+    <div className="pb-10 max-w-3xl mx-auto">
+      {/* Tab selector */}
+      <div className="flex items-center gap-1 mb-6 bg-white/5 border border-white/10 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setTab("queue")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === "queue" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
+        >
+          <ListMusic className="w-4 h-4" />
+          Queue {queue.length > 0 && <span className="text-xs opacity-60">({queue.length})</span>}
+        </button>
+        <button
+          onClick={() => setTab("recent")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === "recent" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
+        >
+          <History className="w-4 h-4" />
+          Recently Played {displayRecent.length > 0 && <span className="text-xs opacity-60">({displayRecent.length})</span>}
+        </button>
+      </div>
+
+      {tab === "queue" && (
+        <>
+          {queue.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-28 text-center">
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-5">
+                <ListMusic className="w-9 h-9 text-white/20" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">Your queue is empty</h3>
+              <p className="text-white/40 text-sm max-w-xs">Play a song to start building your queue.</p>
             </div>
-          </div>
-        </section>
+          ) : (
+            <div className="space-y-8">
+              {currentTrack && (
+                <section>
+                  <SectionLabel>Now Playing</SectionLabel>
+                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-2 shadow-lg shadow-black/50">
+                    <TrackCard track={currentTrack} />
+                  </div>
+                </section>
+              )}
+
+              {upcomingTracks.length > 0 && (
+                <section>
+                  <SectionLabel>Up Next · {upcomingTracks.length} songs</SectionLabel>
+                  <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2">
+                    {upcomingTracks.map((track, i) => (
+                      <div key={track.videoId + i} onClick={() => playTrack(track)}>
+                        <TrackCard track={track} index={currentIndex + 2 + i} showIndex />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {previousTracks.length > 0 && (
+                <section className="opacity-40 hover:opacity-70 transition-opacity">
+                  <SectionLabel>Previously in Queue</SectionLabel>
+                  <div className="bg-white/[0.015] border border-white/5 rounded-2xl p-2">
+                    {previousTracks.map((track, i) => (
+                      <div key={track.videoId + i} onClick={() => playTrack(track)}>
+                        <TrackCard track={track} index={i + 1} showIndex />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {upcomingTracks.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-white/80 mb-4 px-2 uppercase tracking-wider text-xs">Up Next</h2>
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2">
-            {upcomingTracks.map((track, i) => (
-              <div key={track.videoId + i} onClick={() => playTrack(track)}>
-                <TrackCard track={track} index={currentIndex + 2 + i} />
+      {tab === "recent" && (
+        <>
+          {displayRecent.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-28 text-center">
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-5">
+                <History className="w-9 h-9 text-white/20" />
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {previousTracks.length > 0 && (
-        <section className="opacity-50 hover:opacity-100 transition-opacity">
-          <h2 className="text-lg font-semibold text-white/80 mb-4 px-2 uppercase tracking-wider text-xs">Previously Played</h2>
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2">
-            {previousTracks.map((track, i) => (
-              <div key={track.videoId + i} onClick={() => playTrack(track)}>
-                <TrackCard track={track} index={i + 1} />
+              <h3 className="text-lg font-medium text-white mb-2">No history yet</h3>
+              <p className="text-white/40 text-sm max-w-xs">Songs you play will appear here.</p>
+            </div>
+          ) : (
+            <section>
+              <SectionLabel>Recently Played · {displayRecent.length} songs</SectionLabel>
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2">
+                {displayRecent.map((track, i) => (
+                  <div key={track.videoId + i} onClick={() => playTrack(track)}>
+                    <TrackCard track={track} index={i + 1} showIndex />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-xs text-white/40 uppercase tracking-widest font-medium mb-3 px-1">{children}</p>
   );
 }

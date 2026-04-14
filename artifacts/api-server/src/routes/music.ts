@@ -11,6 +11,8 @@ import {
   GetSearchSuggestionsResponse,
   GetWatchPlaylistParams,
   GetWatchPlaylistResponse,
+  GetAlbumParams,
+  GetAlbumResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -29,7 +31,7 @@ function runPython(script: string): Promise<unknown> {
         try {
           resolve(JSON.parse(stdout));
         } catch {
-          reject(new Error(`JSON parse error: ${stdout}`));
+          reject(new Error(`JSON parse error: ${stdout.slice(0, 200)}`));
         }
       }
     });
@@ -149,29 +151,71 @@ from ytmusicapi import YTMusic
 yt = YTMusic()
 try:
     charts = yt.get_charts(country=${JSON.stringify(country)})
-    trending = []
-    top_songs = []
-    if 'trending' in charts and charts['trending']:
-        t = charts['trending']
-        items = t.get('items', []) if isinstance(t, dict) else []
-        trending = items[:20]
-    if 'songs' in charts and charts['songs']:
-        s = charts['songs']
-        items = s.get('items', []) if isinstance(s, dict) else []
-        top_songs = items[:20]
-    print(json.dumps({'trending': trending, 'topSongs': top_songs}))
+    videos = charts.get('videos', [])
+    artists_raw = charts.get('artists', [])
+    
+    chart_tracks = []
+    featured_title = ''
+    
+    # Fetch tracks from the first featured playlist
+    if videos:
+        featured = videos[0]
+        featured_title = featured.get('title', 'Top Charts')
+        playlist_id = featured.get('playlistId', '')
+        if playlist_id:
+            try:
+                pl = yt.get_playlist(playlist_id, limit=30)
+                chart_tracks = pl.get('tracks', [])
+            except:
+                pass
+    
+    # Normalize artists
+    top_artists = []
+    for a in artists_raw[:20]:
+        top_artists.append({
+            'title': a.get('title', ''),
+            'browseId': a.get('browseId', ''),
+            'subscribers': a.get('subscribers', None),
+            'thumbnails': a.get('thumbnails', []),
+            'rank': a.get('rank', None),
+            'trend': a.get('trend', None),
+        })
+    
+    print(json.dumps({
+        'chartTracks': chart_tracks,
+        'topArtists': top_artists,
+        'featuredTitle': featured_title,
+        'country': ${JSON.stringify(country)}
+    }))
 except Exception as e:
-    print(json.dumps({'trending': [], 'topSongs': []}))
+    print(json.dumps({'chartTracks': [], 'topArtists': [], 'featuredTitle': 'Charts', 'country': ${JSON.stringify(country)}}))
 `;
   try {
-    const raw = (await runPython(script)) as { trending: Array<Record<string, unknown>>; topSongs: Array<Record<string, unknown>> };
-    const trending = (raw.trending ?? []).filter((r) => r.videoId).map(normalizeTrack);
-    const topSongs = (raw.topSongs ?? []).filter((r) => r.videoId).map(normalizeTrack);
-    const response = GetChartsResponse.parse({ trending, topSongs, country });
+    const raw = (await runPython(script)) as {
+      chartTracks: Array<Record<string, unknown>>;
+      topArtists: Array<{ title: string; browseId: string; subscribers?: string; thumbnails: Array<{ url: string; width?: number; height?: number }>; rank?: string; trend?: string }>;
+      featuredTitle: string;
+      country: string;
+    };
+    const chartTracks = (raw.chartTracks ?? []).filter((r) => r.videoId).map(normalizeTrack);
+    const topArtists = (raw.topArtists ?? []).map((a) => ({
+      title: a.title,
+      browseId: a.browseId,
+      subscribers: a.subscribers ?? null,
+      thumbnails: normalizeThumbnails(a.thumbnails ?? []),
+      rank: a.rank ?? null,
+      trend: a.trend ?? null,
+    }));
+    const response = GetChartsResponse.parse({
+      chartTracks,
+      topArtists,
+      featuredTitle: raw.featuredTitle ?? "Top Charts",
+      country,
+    });
     res.json(response);
   } catch (err) {
     req.log.error({ err }, "charts error");
-    res.json({ trending: [], topSongs: [], country });
+    res.json({ chartTracks: [], topArtists: [], featuredTitle: "Charts", country });
   }
 });
 
@@ -183,7 +227,19 @@ from ytmusicapi import YTMusic
 yt = YTMusic()
 try:
     suggestions = yt.get_search_suggestions(${JSON.stringify(params.q)})
-    texts = [s['suggestion']['runs'][0]['text'] if isinstance(s, dict) and 'suggestion' in s else str(s) for s in suggestions[:8]]
+    texts = []
+    for s in suggestions[:8]:
+        if isinstance(s, str):
+            texts.append(s)
+        elif isinstance(s, dict):
+            suggestion = s.get('suggestion', {})
+            if isinstance(suggestion, dict):
+                runs = suggestion.get('runs', [])
+                text = ''.join(r.get('text', '') for r in runs if isinstance(r, dict))
+                if text:
+                    texts.append(text)
+            elif isinstance(suggestion, str):
+                texts.append(suggestion)
     print(json.dumps(texts))
 except Exception as e:
     print(json.dumps([]))
@@ -220,6 +276,83 @@ except Exception as e:
   } catch (err) {
     req.log.error({ err }, "watch playlist error");
     res.json({ tracks: [], playlistId: null });
+  }
+});
+
+router.get("/music/album/:albumId", async (req, res) => {
+  const { albumId } = GetAlbumParams.parse(req.params);
+  const script = `
+import json
+from ytmusicapi import YTMusic
+yt = YTMusic()
+try:
+    album = yt.get_album(${JSON.stringify(albumId)})
+    tracks_raw = album.get('tracks', [])
+    thumbnails = album.get('thumbnails', [])
+    
+    # Get artist name
+    artists_raw = album.get('artists', [])
+    artist = artists_raw[0].get('name', 'Unknown') if artists_raw else album.get('artist', 'Unknown')
+    
+    tracks = []
+    for t in tracks_raw:
+        vid = t.get('videoId', '')
+        if not vid:
+            continue
+        t_artists = t.get('artists', [])
+        if not t_artists:
+            t_artists = artists_raw
+        tracks.append({
+            'videoId': vid,
+            'title': t.get('title', 'Unknown'),
+            'artists': t_artists,
+            'album': {'name': album.get('title', ''), 'id': ${JSON.stringify(albumId)}},
+            'duration': t.get('duration', None),
+            'duration_seconds': t.get('duration_seconds', None),
+            'thumbnails': thumbnails,
+            'isExplicit': t.get('isExplicit', False),
+        })
+    
+    result = {
+        'albumId': ${JSON.stringify(albumId)},
+        'title': album.get('title', 'Unknown Album'),
+        'artist': artist,
+        'year': str(album.get('year', '')) if album.get('year') else None,
+        'thumbnails': thumbnails,
+        'tracks': tracks,
+        'trackCount': len(tracks),
+        'description': album.get('description', None),
+    }
+    print(json.dumps(result))
+except Exception as e:
+    print(json.dumps({'albumId': ${JSON.stringify(albumId)}, 'title': 'Unknown', 'artist': 'Unknown', 'year': None, 'thumbnails': [], 'tracks': [], 'trackCount': 0, 'description': None}))
+`;
+  try {
+    const raw = (await runPython(script)) as {
+      albumId: string;
+      title: string;
+      artist: string;
+      year?: string | null;
+      thumbnails: Array<{ url: string; width?: number; height?: number }>;
+      tracks: Array<Record<string, unknown>>;
+      trackCount: number;
+      description?: string | null;
+    };
+    const tracks = (raw.tracks ?? []).filter((r) => r.videoId).map(normalizeTrack);
+    const response = GetAlbumResponse.parse({
+      albumId: raw.albumId,
+      title: raw.title,
+      artist: raw.artist,
+      year: raw.year ?? null,
+      thumbnails: normalizeThumbnails(raw.thumbnails ?? []),
+      tracks,
+      trackCount: raw.trackCount,
+      description: raw.description ?? null,
+    });
+    res.json(response);
+  } catch (err) {
+    req.log.error({ err }, "album error");
+    res.status(500).json({ error: "Failed to get album" });
   }
 });
 
