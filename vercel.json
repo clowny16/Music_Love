@@ -1,6 +1,9 @@
 {
   "version": 2,
   "public": true,
+  "github": {
+    "silent": true
+  },
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -8,9 +11,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/artifacts/music-player/$1"
     }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+  ]
 }
