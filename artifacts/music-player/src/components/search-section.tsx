@@ -18,8 +18,8 @@ export function SearchSection() {
   );
 
   const { data: suggestions } = useGetSearchSuggestions(
-    { q: query },
-    { query: { enabled: query.length > 2, queryKey: ['suggestions', query] } }
+    { q: debouncedQuery },
+    { query: { enabled: debouncedQuery.length > 2, queryKey: ['suggestions', debouncedQuery] } }
   );
 
   useEffect(() => {

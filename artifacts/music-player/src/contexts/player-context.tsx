@@ -96,22 +96,35 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const playTrack = useCallback((track: Track) => {
+  const playTrack = useCallback(async (track: Track) => {
     setCurrentTrack(track);
     setCurrentTime(0);
     addToRecentlyPlayed(track);
     
-    // Ensure the track is in the queue if it's not already
-    setQueueState((q) => {
-      const exists = q.some((t) => t.videoId === track.videoId);
-      if (!exists) {
-        return [track, ...q];
-      }
-      return q;
-    });
+    // Set the track as the first item in the queue and fetch more (Autoplay)
+    setQueueState([track]);
 
     if (playerRef.current) {
       playerRef.current.loadVideoById(track.videoId);
+    }
+
+    try {
+      // Auto-populate queue with related tracks
+      const res = await fetch(`/api/music/watch/${track.videoId}`).then(r => r.json());
+      if (res && res.tracks) {
+        setQueueState(prev => {
+          const combined = [...prev, ...res.tracks.filter((t: Track) => t.videoId !== track.videoId)];
+          // Deduplicate
+          const seen = new Set();
+          return combined.filter(t => {
+            const duplicate = seen.has(t.videoId);
+            seen.add(t.videoId);
+            return !duplicate;
+          }).slice(0, 50);
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch related tracks", e);
     }
   }, [addToRecentlyPlayed]);
 
@@ -136,23 +149,23 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const nextTrack = useCallback(() => {
-    setQueueState((q) => {
-      const ct = currentTrackRef.current;
-      const currentIdx = ct ? q.findIndex((t) => t.videoId === ct.videoId) : -1;
-      
-      if (currentIdx >= 0 && currentIdx < q.length - 1) {
-        const next = q[currentIdx + 1];
-        addToRecentlyPlayed(next);
-        if (playerRef.current) playerRef.current.loadVideoById(next.videoId);
-        setCurrentTrack(next);
-      } else if (q.length > 0 && currentIdx === q.length - 1) {
-        // Optional: Loop to beginning or stop
-        // const first = q[0];
-        // playTrack(first);
+    const q = [...queue]; // Use the latest queue from state
+    const ct = currentTrackRef.current;
+    if (!ct || q.length === 0) return;
+
+    const currentIdx = q.findIndex((t) => t.videoId === ct.videoId);
+    
+    if (currentIdx >= 0 && currentIdx < q.length - 1) {
+      const next = q[currentIdx + 1];
+      setCurrentTrack(next);
+      if (playerRef.current) {
+        playerRef.current.loadVideoById(next.videoId);
       }
-      return q;
-    });
-  }, [addToRecentlyPlayed]);
+    } else if (q.length > 0) {
+      // End of queue: maybe fetch more? For now just reset
+      // or loop
+    }
+  }, [queue]); // Depend on queue state
 
   const previousTrack = useCallback(() => {
     if (currentTime > 3 && playerRef.current) {
