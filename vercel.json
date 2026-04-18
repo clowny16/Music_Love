@@ -1,17 +1,24 @@
 {
   "version": 2,
   "public": true,
-  "github": {
-    "silent": true
-  },
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/:path*",
-      "destination": "https://CHANGE_ME_TO_RAILWAY_URL/api/:path*"
+      "src": "artifacts/music-player/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://CHANGE_ME_TO_RAILWAY_URL/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/artifacts/music-player/$1"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
-  ]
+  ],
+  "cleanUrls": true
 }
