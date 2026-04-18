@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm run typecheck:libs && pnpm -r --if-present run build",
+    "build": "pnpm run typecheck:libs && pnpm --filter @workspace/music-player run build && node -e \"const fs=require('fs'); if(fs.existsSync('dist')){fs.rmSync('dist', {recursive:true,force:true})}; fs.renameSync('artifacts/music-player/dist', 'dist')\"",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
