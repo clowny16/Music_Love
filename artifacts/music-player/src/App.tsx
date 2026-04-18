@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +9,11 @@ import AlbumPage from "@/pages/album-page";
 import { PlayerProvider } from "@/contexts/player-context";
 import { PlayerBar } from "@/components/player-bar";
 import { NowPlayingModal } from "@/components/now-playing-modal";
+import { MainLayout } from "@/components/layout/main-layout";
+import ExplorePage from "@/pages/explore-page";
+import LibraryPage from "@/pages/library-page";
+import ArtistsPage from "@/pages/artists-page";
+import PlaylistsPage from "@/pages/playlists-page";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,8 +29,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/explore" component={ExplorePage} />
+      <Route path="/library" component={LibraryPage} />
+      <Route path="/artists" component={ArtistsPage} />
+      <Route path="/playlists" component={PlaylistsPage} />
       <Route path="/album/:albumId">
-        {(params) => <AlbumPage albumId={params.albumId} />}
+        {(params: { albumId: string }) => <AlbumPage albumId={params.albumId} />}
       </Route>
       <Route component={NotFound} />
     </Switch>
@@ -37,7 +47,9 @@ function App() {
       <TooltipProvider>
         <PlayerProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
+            <MainLayout>
+              <Router />
+            </MainLayout>
           </WouterRouter>
           <PlayerBar />
           <NowPlayingModal />

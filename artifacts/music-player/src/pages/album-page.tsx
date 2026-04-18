@@ -1,4 +1,5 @@
-import { useGetAlbum, getWatchPlaylist } from "@workspace/api-client-react";
+import { getWatchPlaylist } from "@workspace/api-client-react";
+import { useGetAlbum } from "@workspace/api-client-react/src/generated/api";
 import { usePlayer } from "@/contexts/player-context";
 import { TrackCard } from "@/components/track-card";
 import { Play, Shuffle, ArrowLeft, Disc3 } from "lucide-react";
@@ -134,7 +135,7 @@ export default function AlbumPage({ albumId }: AlbumPageProps) {
 
         {/* Track list */}
         <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2">
-          {album.tracks.map((track, i) => (
+          {album.tracks.map((track: any, i: number) => (
             <div key={track.videoId + i} onClick={() => handleTrackClick(track, i)}>
               <TrackCard track={track} index={i + 1} showIndex />
             </div>

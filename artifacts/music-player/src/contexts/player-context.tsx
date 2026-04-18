@@ -85,6 +85,131 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<number | null>(null);
+  const currentTrackRef = useRef<Track | null>(null);
+
+  const addToRecentlyPlayed = useCallback((track: Track) => {
+    setRecentlyPlayed((prev) => {
+      const filtered = prev.filter((t) => t.videoId !== track.videoId);
+      const updated = [track, ...filtered].slice(0, MAX_HISTORY);
+      saveRecentlyPlayed(updated);
+      return updated;
+    });
+  }, []);
+
+  const playTrack = useCallback((track: Track) => {
+    setCurrentTrack(track);
+    setCurrentTime(0);
+    addToRecentlyPlayed(track);
+    
+    // Ensure the track is in the queue if it's not already
+    setQueueState((q) => {
+      const exists = q.some((t) => t.videoId === track.videoId);
+      if (!exists) {
+        return [track, ...q];
+      }
+      return q;
+    });
+
+    if (playerRef.current) {
+      playerRef.current.loadVideoById(track.videoId);
+    }
+  }, [addToRecentlyPlayed]);
+
+  const pause = useCallback(() => {
+    if (playerRef.current) playerRef.current.pauseVideo();
+  }, []);
+
+  const resume = useCallback(() => {
+    if (playerRef.current) playerRef.current.playVideo();
+  }, []);
+
+  const seekTo = useCallback((seconds: number) => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(seconds, true);
+      setCurrentTime(seconds);
+    }
+  }, []);
+
+  const setVolume = useCallback((level: number) => {
+    if (playerRef.current) playerRef.current.setVolume(level);
+    setVolumeState(level);
+  }, []);
+
+  const nextTrack = useCallback(() => {
+    setQueueState((q) => {
+      const ct = currentTrackRef.current;
+      const currentIdx = ct ? q.findIndex((t) => t.videoId === ct.videoId) : -1;
+      
+      if (currentIdx >= 0 && currentIdx < q.length - 1) {
+        const next = q[currentIdx + 1];
+        addToRecentlyPlayed(next);
+        if (playerRef.current) playerRef.current.loadVideoById(next.videoId);
+        setCurrentTrack(next);
+      } else if (q.length > 0 && currentIdx === q.length - 1) {
+        // Optional: Loop to beginning or stop
+        // const first = q[0];
+        // playTrack(first);
+      }
+      return q;
+    });
+  }, [addToRecentlyPlayed]);
+
+  const previousTrack = useCallback(() => {
+    if (currentTime > 3 && playerRef.current) {
+      playerRef.current.seekTo(0, true);
+      setCurrentTime(0);
+      return;
+    }
+    setQueueState((q) => {
+      setCurrentTrack((ct) => {
+        const currentIdx = ct ? q.findIndex((t) => t.videoId === ct.videoId) : -1;
+        if (currentIdx > 0) {
+          const prev = q[currentIdx - 1];
+          addToRecentlyPlayed(prev);
+          if (playerRef.current) playerRef.current.loadVideoById(prev.videoId);
+          return prev;
+        }
+        return ct;
+      });
+      return q;
+    });
+  }, [currentTime, addToRecentlyPlayed]);
+
+  // Sync ref with state
+  useEffect(() => {
+    currentTrackRef.current = currentTrack;
+    
+    // Media Session API for mobile/background control
+    if ('mediaSession' in navigator && currentTrack) {
+      const track = currentTrack;
+      navigator.mediaSession.metadata = new window.MediaMetadata({
+        title: track.title,
+        artist: track.artists.map(a => a.name).join(', '),
+        album: track.album?.name || 'YouTube Music',
+        artwork: track.thumbnails.map(t => ({
+          src: t.url || '',
+          sizes: `${t.width}x${t.height}`,
+          type: 'image/jpeg'
+        }))
+      });
+    }
+  }, [currentTrack]);
+
+  // Media Session Action Handlers
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => resume());
+      navigator.mediaSession.setActionHandler('pause', () => pause());
+      navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
+      navigator.mediaSession.setActionHandler('previoustrack', () => previousTrack());
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined) seekTo(details.seekTime);
+      });
+    }
+  }, [resume, pause, nextTrack, previousTrack, seekTo]);
+
+  const nextTrackRef = useRef(nextTrack);
+  useEffect(() => { nextTrackRef.current = nextTrack; }, [nextTrack]);
 
   useEffect(() => {
     const initPlayer = () => {
@@ -147,84 +272,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
-
-  const addToRecentlyPlayed = useCallback((track: Track) => {
-    setRecentlyPlayed((prev) => {
-      const filtered = prev.filter((t) => t.videoId !== track.videoId);
-      const updated = [track, ...filtered].slice(0, MAX_HISTORY);
-      saveRecentlyPlayed(updated);
-      return updated;
-    });
-  }, []);
-
-  const playTrack = useCallback((track: Track) => {
-    setCurrentTrack(track);
-    setCurrentTime(0);
-    addToRecentlyPlayed(track);
-    if (playerRef.current) {
-      playerRef.current.loadVideoById(track.videoId);
-    }
-  }, [addToRecentlyPlayed]);
-
-  const pause = useCallback(() => {
-    if (playerRef.current) playerRef.current.pauseVideo();
-  }, []);
-
-  const resume = useCallback(() => {
-    if (playerRef.current) playerRef.current.playVideo();
-  }, []);
-
-  const seekTo = useCallback((seconds: number) => {
-    if (playerRef.current) {
-      playerRef.current.seekTo(seconds, true);
-      setCurrentTime(seconds);
-    }
-  }, []);
-
-  const setVolume = useCallback((level: number) => {
-    if (playerRef.current) playerRef.current.setVolume(level);
-    setVolumeState(level);
-  }, []);
-
-  const nextTrack = useCallback(() => {
-    setQueueState((q) => {
-      setCurrentTrack((ct) => {
-        const currentIdx = ct ? q.findIndex((t) => t.videoId === ct.videoId) : -1;
-        if (currentIdx >= 0 && currentIdx < q.length - 1) {
-          const next = q[currentIdx + 1];
-          addToRecentlyPlayed(next);
-          if (playerRef.current) playerRef.current.loadVideoById(next.videoId);
-          return next;
-        }
-        return ct;
-      });
-      return q;
-    });
-  }, [addToRecentlyPlayed]);
-
-  const nextTrackRef = useRef(nextTrack);
-  useEffect(() => { nextTrackRef.current = nextTrack; }, [nextTrack]);
-
-  const previousTrack = useCallback(() => {
-    if (currentTime > 3 && playerRef.current) {
-      playerRef.current.seekTo(0, true);
-      setCurrentTime(0);
-      return;
-    }
-    setQueueState((q) => {
-      setCurrentTrack((ct) => {
-        const currentIdx = ct ? q.findIndex((t) => t.videoId === ct.videoId) : -1;
-        if (currentIdx > 0) {
-          const prev = q[currentIdx - 1];
-          addToRecentlyPlayed(prev);
-          if (playerRef.current) playerRef.current.loadVideoById(prev.videoId);
-          return prev;
-        }
-        return ct;
-      });
-      return q;
-    });
-  }, [currentTime, addToRecentlyPlayed]);
 
   const setQueue = useCallback((tracks: Track[]) => { setQueueState(tracks); }, []);
 

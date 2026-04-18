@@ -228,19 +228,22 @@ yt = YTMusic()
 try:
     suggestions = yt.get_search_suggestions(${JSON.stringify(params.q)})
     texts = []
-    for s in suggestions[:8]:
+    for s in suggestions[:10]:
         if isinstance(s, str):
             texts.append(s)
         elif isinstance(s, dict):
-            suggestion = s.get('suggestion', {})
-            if isinstance(suggestion, dict):
-                runs = suggestion.get('runs', [])
+            # ytmusicapi can return dicts with 'suggestion' and 'runs'
+            suggestion_val = s.get('suggestion')
+            if isinstance(suggestion_val, str):
+                texts.append(suggestion_val)
+            elif isinstance(suggestion_val, dict):
+                runs = suggestion_val.get('runs', [])
                 text = ''.join(r.get('text', '') for r in runs if isinstance(r, dict))
                 if text:
                     texts.append(text)
-            elif isinstance(suggestion, str):
-                texts.append(suggestion)
-    print(json.dumps(texts))
+    # Remove duplicates and empty strings
+    result = list(dict.fromkeys([t.strip() for t in texts if t and t.strip()]))
+    print(json.dumps(result))
 except Exception as e:
     print(json.dumps([]))
 `;

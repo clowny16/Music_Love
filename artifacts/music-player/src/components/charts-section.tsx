@@ -40,8 +40,8 @@ export function ChartsSection() {
     );
   }
 
-  const hasSongs = charts?.chartTracks && charts.chartTracks.length > 0;
-  const hasArtists = charts?.topArtists && charts.topArtists.length > 0;
+  const hasSongs = (charts as any)?.chartTracks && (charts as any).chartTracks.length > 0;
+  const hasArtists = (charts as any)?.topArtists && (charts as any).topArtists.length > 0;
 
   if (!hasSongs && !hasArtists) {
     return (
@@ -76,7 +76,7 @@ export function ChartsSection() {
             <span className="text-xs text-white/30 uppercase tracking-wider">US · {charts.chartTracks.length} tracks</span>
           </div>
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2">
-            {charts.chartTracks.slice(0, 30).map((track, i) => (
+            {(charts as any).chartTracks.slice(0, 30).map((track: any, i: number) => (
               <div
                 key={track.videoId + i}
                 onClick={() => handleSelectTrack(track, charts.chartTracks)}
@@ -95,8 +95,8 @@ export function ChartsSection() {
             <span className="text-xs text-white/30 uppercase tracking-wider">US · Trending</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {charts.topArtists.slice(0, 20).map((artist: TopArtist, i: number) => (
-              <ArtistCard key={artist.browseId + i} artist={artist} rank={i + 1} />
+            {((charts as any)?.topArtists || []).slice(0, 20).map((artist: any, i: number) => (
+              <ArtistCard key={artist.browseId + i} artist={artist as any} rank={i + 1} />
             ))}
           </div>
         </section>
